@@ -4,21 +4,30 @@
 #define relay4 D4
 #define relay5 D8
 #define relay6 D7
+#define dht1_pin D14
+#define DhtType DHT22
 
 #include "credentials.c"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <string.h>
+#include <DHT.h> // to get sensors data
+#include <Ticker.h> // ticker library to control dht22 sensors
 
 
- 
+
+
 WiFiClient espClient;
 PubSubClient client(espClient);
+Ticker check_Mqtt_connection; // Check if the connection is lost try to reconnect ( maybe mqtt server was shutdown unexpectedly or restarted! )
 
-// tell functions to compiler
+// Tell functions to compiler
 void printStatus(bool status, String status_message);
 boolean turnOffOn(String message,int Relay);
- 
+void checkMqttServer();
+
+
+
 void setup() {
   // since we just have relay's here 
   // we make all them as output
@@ -30,6 +39,8 @@ void setup() {
   pinMode(relay6,OUTPUT);
   
   Serial.begin(115200);
+
+  check_Mqtt_connection.attach(180, checkMqttServer); // check mqtt server connection every 3 minutes (3*60 seconds)
 
   // get credentials from c function
   // function is declared in credentials.c 
@@ -80,7 +91,22 @@ void setup() {
   
  
 }
+
+void checkMqttServer(){
+  while (!client.connected()) {
+    Serial.println("Reconnecting to MQTT...");
+
+    if (client.connect("nodeMcu")) {
  
+      Serial.println("connected");
+    } else {
+ 
+      Serial.print("failed with state ");
+      Serial.println(client.state());  //If you get state 5: mismatch in configuration
+      delay(10000);
+    }
+  }
+}
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
  
     Serial.print("Message arrived in topic: ");
