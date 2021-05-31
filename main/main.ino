@@ -4,14 +4,12 @@
 #define relay4 D4
 #define relay5 D8
 #define relay6 D7
-#define dht1_pin D14
-#define DhtType DHT22
+
 
 #include "credentials.c"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <string.h>
-#include <DHT.h> // to get sensors data
 #include <Ticker.h> // ticker library to control dht22 sensors
 
 
