@@ -11,19 +11,19 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <string.h>
-#include <Ticker.h> // ticker library to check mqtt connection status ( if disconnected then try to reconnect )
+//#include <Ticker.h> // ticker library to check mqtt connection status ( if disconnected then try to reconnect )
 
 
 
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-Ticker check_Mqtt_connection; // Check if the connection is lost try to reconnect ( maybe mqtt server was shutdown unexpectedly or restarted! )
+//Ticker check_Mqtt_connection; // Check if the connection is lost try to reconnect ( maybe mqtt server was shutdown unexpectedly or restarted! )
 
 // Tell functions to compiler
 void printStatus(bool status, String status_message);
 boolean turnOffOn(String message,int Relay);
-void checkMqttServer();
+boolean checkMqttServer();
 
 
 
@@ -36,11 +36,19 @@ void setup() {
   pinMode(relay4,OUTPUT);
   pinMode(relay5,OUTPUT);
   pinMode(relay6,OUTPUT);
-  pinMode(LED,OUTPUT);  // setup onboard led
+  pinMode(LED,OUTPUT);  // setup onboard 
+  // -------------------- 
+  digitalWrite(relay1,HIGH);
+  digitalWrite(relay2,HIGH);
+  digitalWrite(relay3,HIGH);
+  digitalWrite(relay4,HIGH);
+  digitalWrite(relay5,HIGH);
+  digitalWrite(relay6,HIGH);
+  
   
   Serial.begin(115200);
 
-  check_Mqtt_connection.attach(180, checkMqttServer); // check mqtt server connection every 3 minutes (3*60 seconds)
+//  check_Mqtt_connection.attach(180, checkMqttServer); // check mqtt server connection every 3 minutes (3*60 seconds)
 
   // get credentials from c function
   // function is declared in credentials.c 
@@ -73,7 +81,7 @@ void setup() {
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
 
-    if (client.connect("nodeMcu")) {
+    if (client.connect("WemosD1R1")) {
  
       Serial.println("connected");  
  
@@ -97,7 +105,7 @@ void setup() {
  
 }
 
-void checkMqttServer(){
+boolean checkMqttServer(){
   while (!client.connected()) {
     digitalWrite(LED,HIGH);
     Serial.println("Reconnecting to MQTT...");
@@ -105,6 +113,7 @@ void checkMqttServer(){
     if (client.connect("nodeMcu")) {
  
       Serial.println("connected");
+      return true;
     } else {
  
       Serial.print("failed with state ");
@@ -114,6 +123,8 @@ void checkMqttServer(){
       delay(2000);
     }
   }
+  // would never reach here but in case it reaches here
+  return true;
 }
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
  
@@ -197,6 +208,11 @@ void printStatus(bool status, String status_message){
     Serial.println("Unsupported query");
   }
 }
+
 void loop() {
   client.loop();
+
+  // check mqtt connection here
+  if(!client.connected())
+    checkMqttServer();
 }
