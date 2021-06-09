@@ -4,13 +4,14 @@
 #define relay4 D4
 #define relay5 D8
 #define relay6 D7
+#define LED 2   // built in led 
 
 
 #include "credentials.c"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <string.h>
-#include <Ticker.h> // ticker library to control dht22 sensors
+#include <Ticker.h> // ticker library to check mqtt connection status ( if disconnected then try to reconnect )
 
 
 
@@ -35,6 +36,7 @@ void setup() {
   pinMode(relay4,OUTPUT);
   pinMode(relay5,OUTPUT);
   pinMode(relay6,OUTPUT);
+  pinMode(LED,OUTPUT);  // setup onboard led
   
   Serial.begin(115200);
 
@@ -54,11 +56,16 @@ void setup() {
   WiFi.begin(cred.ssid, cred.password);
  
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
     Serial.println("Connecting to WiFi..");
+    digitalWrite(LED,LOW);
+    delay(300);
+    digitalWrite(LED,HIGH);
+    delay(300);
   }
   Serial.print("Connected to WiFi :");
   Serial.println(WiFi.SSID());
+  digitalWrite(LED,LOW);
+
  
   client.setServer(cred.mqtt_host_ip, cred.mqtt_port);
   client.setCallback(mqtt_callback);
@@ -92,6 +99,7 @@ void setup() {
 
 void checkMqttServer(){
   while (!client.connected()) {
+    digitalWrite(LED,HIGH);
     Serial.println("Reconnecting to MQTT...");
 
     if (client.connect("nodeMcu")) {
@@ -101,7 +109,9 @@ void checkMqttServer(){
  
       Serial.print("failed with state ");
       Serial.println(client.state());  //If you get state 5: mismatch in configuration
-      delay(10000);
+      delay(2000);
+      digitalWrite(LED,LOW);
+      delay(2000);
     }
   }
 }
