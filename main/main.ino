@@ -1,9 +1,11 @@
 #define relay1 D6
-#define relay2 D15
+#define relay2 D15 // TODO: conflict with D3, NEED TO BE SOLVED!!!
 #define relay3 D2
 #define relay4 D4
 #define relay5 D8
 #define relay6 D7
+#define relay7 D3
+#define relay8 D5
 #define LED 2   // built in led 
 
 
@@ -11,14 +13,12 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <string.h>
-//#include <Ticker.h> // ticker library to check mqtt connection status ( if disconnected then try to reconnect )
 
 
 
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-//Ticker check_Mqtt_connection; // Check if the connection is lost try to reconnect ( maybe mqtt server was shutdown unexpectedly or restarted! )
 
 // Tell functions to compiler
 void printStatus(bool status, String status_message);
@@ -36,6 +36,8 @@ void setup() {
   pinMode(relay4,OUTPUT);
   pinMode(relay5,OUTPUT);
   pinMode(relay6,OUTPUT);
+  pinMode(relay7,OUTPUT);
+  pinMode(relay8,OUTPUT);
   pinMode(LED,OUTPUT);  // setup onboard 
   // -------------------- 
   digitalWrite(relay1,HIGH);
@@ -44,11 +46,12 @@ void setup() {
   digitalWrite(relay4,HIGH);
   digitalWrite(relay5,HIGH);
   digitalWrite(relay6,HIGH);
+  digitalWrite(relay7,HIGH);
+  digitalWrite(relay8,HIGH);
   
   
   Serial.begin(115200);
 
-//  check_Mqtt_connection.attach(180, checkMqttServer); // check mqtt server connection every 3 minutes (3*60 seconds)
 
   // get credentials from c function
   // function is declared in credentials.c 
@@ -60,9 +63,11 @@ void setup() {
   Serial.println(cred.password);
   Serial.println(cred.mqtt_host_ip);
   Serial.println(cred.mqtt_port);  */
- 
+
+  // setup wifi
   WiFi.begin(cred.ssid, cred.password);
- 
+
+ // connecting to wifi access point
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Connecting to WiFi..");
     digitalWrite(LED,LOW);
@@ -74,43 +79,54 @@ void setup() {
   Serial.println(WiFi.SSID());
   digitalWrite(LED,LOW);
 
- 
+
+  // Setup mqtt server config
   client.setServer(cred.mqtt_host_ip, cred.mqtt_port);
+  // Setup callback function for mqtt
   client.setCallback(mqtt_callback);
- 
+
+ // connect to mqtt server
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
 
+    // connect to mqtt server with WemosD1R1 id
     if (client.connect("WemosD1R1")) {
  
       Serial.println("connected");  
  
     } else {
- 
+      // connection failed 
+      // maybe mqtt server is not up 
       Serial.print("failed with state ");
       Serial.println(client.state());  //If you get state 5: mismatch in configuration
       delay(2000);
  
     }
   }
- 
+
+  // publish a message when device connected to mqtt server
   client.publish("WEMOS_D1_R1", "room2 wemos d1 r1 connected!");
+
+  // subscribe to topics
   client.subscribe("room2/lamp");
   client.subscribe("hall/lamp1");
   client.subscribe("hall/lamp2");
   client.subscribe("hall/lamp3");
   client.subscribe("garden/lamp1");
   client.subscribe("garden/lamp2");
+  client.subscribe("garden/lamp3");
+  client.subscribe("garden/lamp4");
   
  
 }
 
+// reconnect to mqtt server if the connection was interrupted
 boolean checkMqttServer(){
   while (!client.connected()) {
     digitalWrite(LED,HIGH);
     Serial.println("Reconnecting to MQTT...");
 
-    if (client.connect("nodeMcu")) {
+    if (client.connect("WemosD1R1")) {
  
       Serial.println("connected");
       return true;
@@ -126,6 +142,8 @@ boolean checkMqttServer(){
   // would never reach here but in case it reaches here
   return true;
 }
+
+// mqtt call back function
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
  
     Serial.print("Message arrived in topic: ");
@@ -156,25 +174,35 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
     
     } else if( strstr(topic, "hall/lamp2") ){
     
-      bool status = turnOffOn(message,relay3);
+      bool status = turnOffOn(message,relay5);
       printStatus(status, "hall/lamp2 task succeeded!");
     
     } else if ( strstr(topic, "hall/lamp3") ){
     
-      bool status = turnOffOn(message, relay4);
+      bool status = turnOffOn(message, relay6);
       printStatus(status, "hall/lamp3 task succeded!");
     
     } else if ( strstr(topic, "garden/lamp1") ){
     
-      bool status = turnOffOn(message,relay5);
+      bool status = turnOffOn(message,relay3);
       printStatus(status, "garden/lamp1 task succeeded!");
     
     } else if ( strstr(topic, "garden/lamp2") ){
     
-      bool status = turnOffOn(message,relay6);
+      bool status = turnOffOn(message,relay4);
       printStatus(status, "garden/lamp2 task succeded!");
     
-    } else {
+    } else if ( strstr(topic, "garden/lamp3") ){
+
+      bool status = turnOffOn(message,relay7);
+      printStatus(status, "garden/lamp3 task succeded!");
+    
+    }else if ( strstr(topic, "garden/lamp4") ){
+    
+      bool status = turnOffOn(message,relay8);
+      printStatus(status, "garden/lamp4 task succeded!");
+    
+    }else {
       Serial.println("Unsuppoted topic");
       Serial.print("Sent Topic: ");
       Serial.println(topic);
