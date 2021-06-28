@@ -66,8 +66,13 @@ void setup() {
 
   // setup wifi
   WiFi.begin(cred.ssid, cred.password);
+  
 
- // connecting to wifi access point
+  Serial.print("MAC Addr:\t");
+  // print mac address
+  Serial.println(WiFi.macAddress());
+  
+  // connecting to wifi access point
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Connecting to WiFi..");
     digitalWrite(LED,LOW);
