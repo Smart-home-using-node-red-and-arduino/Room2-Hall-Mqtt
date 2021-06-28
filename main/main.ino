@@ -87,20 +87,19 @@ void setup() {
 
  // connect to mqtt server
   while (!client.connected()) {
-    Serial.println("Connecting to MQTT...");
+    digitalWrite(LED,HIGH);
+    Serial.println("Reconnecting to MQTT...");
 
-    // connect to mqtt server with WemosD1R1 id
     if (client.connect("WemosD1R1")) {
  
-      Serial.println("connected");  
- 
+      Serial.println("connected");
     } else {
-      // connection failed 
-      // maybe mqtt server is not up 
+ 
       Serial.print("failed with state ");
       Serial.println(client.state());  //If you get state 5: mismatch in configuration
       delay(2000);
- 
+      digitalWrite(LED,LOW);
+      delay(2000);
     }
   }
 
