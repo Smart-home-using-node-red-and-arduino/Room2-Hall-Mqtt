@@ -24,7 +24,7 @@ PubSubClient client(espClient);
 void printStatus(bool status, String status_message);
 boolean turnOffOn(String message,int Relay);
 boolean checkMqttServer();
-
+void checkDisconnectedTime(unsigned int currentTime, unsigned int previousMillis, unsigned int restart_interval);
 
 
 void setup() {
@@ -90,8 +90,17 @@ void setup() {
   // Setup callback function for mqtt
   client.setCallback(mqtt_callback);
 
+  // get previous millis, so we can restart if the board was disconneted for long time
+  unsigned long previousMillis = millis();
+
  // connect to mqtt server
   while (!client.connected()) {
+
+    // if the connection to mqtt server was not stablished for 10 minutes, restart board
+    // Note here we set 10 minutes as a long time descibed above!
+    checkDisconnectedTime(millis() , previousMillis, 600000);
+
+    
     digitalWrite(LED,HIGH);
     Serial.println("Reconnecting to MQTT...");
 
@@ -126,7 +135,17 @@ void setup() {
 
 // reconnect to mqtt server if the connection was interrupted
 boolean checkMqttServer(){
+  
+  // get previous millis, so we can restart if the board was disconneted for long time
+  unsigned long previousMillis = millis();
+  
+  
   while (!client.connected()) {
+    // if the connection to mqtt server was not stablished for 10 minutes, restart board
+    // Note here we set 10 minutes as a long time descibed above!
+    checkDisconnectedTime(millis() , previousMillis, 600000);
+
+    // this line is to make built in led behaviour as blinking
     digitalWrite(LED,HIGH);
     Serial.println("Reconnecting to MQTT...");
 
@@ -139,6 +158,8 @@ boolean checkMqttServer(){
       Serial.print("failed with state ");
       Serial.println(client.state());  //If you get state 5: mismatch in configuration
       delay(2000);
+      
+      // this line is to make built in led behaviour as blinking
       digitalWrite(LED,LOW);
       delay(2000);
     }
@@ -239,6 +260,12 @@ void printStatus(bool status, String status_message){
   else {
     Serial.println("Unsupported query");
   }
+}
+void checkDisconnectedTime(unsigned int currentTime, unsigned int previousMillis, unsigned int restart_interval){
+    // restart if the disconnected time went for more than 10 minutes
+    if( currentTime - previousMillis > restart_interval ){
+      ESP.restart();
+    } else return;
 }
 
 void loop() {
