@@ -177,7 +177,7 @@ void setup() {
   }
 
   // publish a message when device connected to mqtt server
-  client.publish("WEMOS_D1_R1", "room2 wemos d1 r1 connected!");
+  client.publish("WEMOS_D1_R1", "room2 ESP8266_WEMOS_D1_R1");
 
   // subscribe to topics
   client.subscribe("room2/lamp");
