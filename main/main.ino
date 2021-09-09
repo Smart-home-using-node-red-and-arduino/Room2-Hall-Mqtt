@@ -1,11 +1,11 @@
-#define relay1 D6
-#define relay2 D15 // TODO: conflict with D3, NEED TO BE SOLVED!!!
-#define relay3 D2
-#define relay4 D4
-#define relay5 D8
+#define relay1 D2
+#define relay2 D3
+#define relay3 D4
+#define relay4 D5
+#define relay5 D6
 #define relay6 D7
-#define relay7 D3
-#define relay8 D5
+//#define relay7 D7
+//#define relay8 D5
 #define LED 2   // built in led 
 
 
@@ -46,8 +46,8 @@ void setup() {
   pinMode(relay4,OUTPUT);
   pinMode(relay5,OUTPUT);
   pinMode(relay6,OUTPUT);
-  pinMode(relay7,OUTPUT);
-  pinMode(relay8,OUTPUT);
+//  pinMode(relay7,OUTPUT);
+//  pinMode(relay8,OUTPUT);
   pinMode(LED,OUTPUT);  // setup onboard 
   // -------------------- 
   digitalWrite(relay1,HIGH);
@@ -56,8 +56,8 @@ void setup() {
   digitalWrite(relay4,HIGH);
   digitalWrite(relay5,HIGH);
   digitalWrite(relay6,HIGH);
-  digitalWrite(relay7,HIGH);
-  digitalWrite(relay8,HIGH);
+//  digitalWrite(relay7,LOW);
+//  digitalWrite(relay8,LOW);
   
   
 
@@ -186,8 +186,8 @@ void setup() {
   client.subscribe("hall/lamp3");
   client.subscribe("garden/lamp1");
   client.subscribe("garden/lamp2");
-  client.subscribe("garden/lamp3");
-  client.subscribe("garden/lamp4");
+//  client.subscribe("garden/lamp3");
+//  client.subscribe("garden/lamp4");
   
  
 }
@@ -258,34 +258,31 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
     
     } else if( strstr(topic, "hall/lamp2") ){
     
-      bool status = turnOffOn(message,relay5);
+      bool status = turnOffOn(message,relay3);
       printStatus(status, "hall/lamp2 task succeeded!");
     
     } else if ( strstr(topic, "hall/lamp3") ){
     
-      bool status = turnOffOn(message, relay6);
+      bool status = turnOffOn(message, relay4);
       printStatus(status, "hall/lamp3 task succeded!");
     
     } else if ( strstr(topic, "garden/lamp1") ){
     
-      bool status = turnOffOn(message,relay3);
+      bool status = turnOffOn(message,relay5);
       printStatus(status, "garden/lamp1 task succeeded!");
     
     } else if ( strstr(topic, "garden/lamp2") ){
     
-      bool status = turnOffOn(message,relay4);
+      bool status = turnOffOn(message,relay6);
       printStatus(status, "garden/lamp2 task succeded!");
     
-    } else if ( strstr(topic, "garden/lamp3") ){
-
-      bool status = turnOffOn(message,relay7);
-      printStatus(status, "garden/lamp3 task succeded!");
     
-    }else if ( strstr(topic, "garden/lamp4") ){
-    
-      bool status = turnOffOn(message,relay8);
-      printStatus(status, "garden/lamp4 task succeded!");
-    
+//    
+//    }else if ( strstr(topic, "garden/lamp4") ){
+//    
+//      bool status = turnOffOn(message,relay2);
+//      printStatus(status, "garden/lamp4 task succeded!");
+//    
     }else {
       Serial.println("Unsuppoted topic");
       Serial.print("Sent Topic: ");
@@ -298,12 +295,12 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 
 boolean turnOffOn(String message,int Relay){
   if(message == "#on") {
-     digitalWrite(Relay,LOW);
+     digitalWrite(Relay,HIGH);
      Serial.println("room1 lamp turned on");
      return true;
   }
   else if(message == "#off") {
-     digitalWrite(Relay,HIGH);
+     digitalWrite(Relay,LOW);
      return true;
      Serial.println("room1 lamp turned off");
   }else{
