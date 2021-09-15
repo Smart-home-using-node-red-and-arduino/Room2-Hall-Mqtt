@@ -4,9 +4,10 @@
 #define relay4 D5
 #define relay5 D6
 #define relay6 D7
-//#define relay7 D7
-//#define relay8 D5
+#define DHTPin D8
 #define LED 2   // built in led 
+#define DHTTYPE DHT22   // DHT 22  
+
 
 
 #include "credentials.c"
@@ -16,19 +17,27 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <string.h>
+#include "DHT.h"
+
 
 
 
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+DHT dht(DHTPin, DHTTYPE);
 
 // Tell functions to compiler
 void printStatus(bool status, String status_message);
 boolean turnOffOn(String message,int Relay);
+boolean checkReadingSensor();
+boolean readTempHum();
+boolean sendTempHum();
 boolean checkMqttServer();
 void checkDisconnectedTime(unsigned int currentTime, unsigned int previousMillis, unsigned int restart_interval);
 
+float Temperature;
+float Humidity;
 
 void setup() {
 
@@ -56,8 +65,6 @@ void setup() {
   digitalWrite(relay4,HIGH);
   digitalWrite(relay5,HIGH);
   digitalWrite(relay6,HIGH);
-//  digitalWrite(relay7,LOW);
-//  digitalWrite(relay8,LOW);
   
   
 
@@ -185,10 +192,7 @@ void setup() {
   client.subscribe("hall/lamp2");
   client.subscribe("hall/lamp3");
   client.subscribe("garden/lamp1");
-  client.subscribe("garden/lamp2");
-//  client.subscribe("garden/lamp3");
-//  client.subscribe("garden/lamp4");
-  
+  client.subscribe("garden/lamp2");  
  
 }
 
@@ -277,12 +281,6 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
       printStatus(status, "garden/lamp2 task succeded!");
     
     
-//    
-//    }else if ( strstr(topic, "garden/lamp4") ){
-//    
-//      bool status = turnOffOn(message,relay2);
-//      printStatus(status, "garden/lamp4 task succeded!");
-//    
     }else {
       Serial.println("Unsuppoted topic");
       Serial.print("Sent Topic: ");
@@ -322,6 +320,45 @@ void checkDisconnectedTime(unsigned int currentTime, unsigned int previousMillis
     if( currentTime - previousMillis > restart_interval ){
       ESP.restart();
     } else return;
+}
+
+
+unsigned long previousMillis = 0;
+// this function is used to read temperature and send it to server every 15 minutes (900 seconds)
+const long interval = 900000; // 900 seconds
+boolean checkReadingSensor(){
+  unsigned long current = millis();
+  if( current - previousMillis > interval ){
+    previousMillis = current;
+    readTempHum();
+    sendTempHum();
+  }
+  return true;
+}
+
+boolean readTempHum(){
+  // read temperature and humidity
+  Temperature = dht.readTemperature();
+  Humidity = dht.readHumidity();
+
+  // print temp and humidity for debug 
+  Serial.print("Temp: ");
+  Serial.println(Temperature);
+
+  Serial.print("Humidity: ");
+  Serial.println(Humidity);
+  
+  return true;
+}
+boolean sendTempHum(){
+  char temp[6];
+  char hum[6];
+  dtostrf(Temperature, 4,2, temp);
+  dtostrf(Humidity, 4,2, hum);
+  client.publish("Temperature0", temp);
+  client.publish("Humidity0", hum);
+
+  return true;
 }
 
 void loop() {
